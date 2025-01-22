@@ -1,0 +1,22 @@
+{
+  "app_title": "Stock-Quote-App",
+  "welcome_message": "Welcome to the App",
+  "login_button": "Login",
+  "signup_button": "Sign Up",
+  "email":"email",
+  "username":"username",
+  "password":"password",
+  "email_hint": "Enter your email",
+  "username_hint": "Enter your username",
+  "password_hint": "Enter your password",
+  "name_hint": "Enter your name",
+  "phone_hint": "Enter your phone number",
+  "address_hint": "Enter your address",
+  "login_with_google": "Login with Google",
+  "login_with_apple": "Login with Apple",
+  "authentiation_failed_error":"Authentication failed! Please try again.",
+  "submit":"submit",
+  "already_account":"Already have an account? Login here.",
+  "not_have_account":"Dont\t have an account? sign up here."
+  
+}
