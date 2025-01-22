@@ -15,3 +15,4 @@ class DeleteStockEvent extends StockEvent {
 }
 
 class LoadStocksEvent extends StockEvent {}
+

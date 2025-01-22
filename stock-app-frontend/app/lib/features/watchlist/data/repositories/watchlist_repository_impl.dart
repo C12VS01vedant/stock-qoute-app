@@ -16,7 +16,7 @@ class StockRepositoryImpl implements StockRepository {
   Future<List<StockOffline>> getAllStocks() async {
     return _hiveDatabaseService.getAllItems();
   }
-  
+
   @override
   Future<void> deleteStock(String symbol) async {
     await _hiveDatabaseService.deleteStock(symbol);

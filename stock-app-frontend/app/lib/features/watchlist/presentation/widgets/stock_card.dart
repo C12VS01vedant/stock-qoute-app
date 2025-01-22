@@ -114,12 +114,19 @@ class StockCard extends StatelessWidget {
                                 changeAmount >= 0 ? Colors.green : Colors.red,
                           ),
                         ),
+                       
                       ],
                     ),
+                      Positioned(
+              top: 10,
+              right: 10,
+              child: Icon(Icons.save),
+            )
                   ],
                 ),
               ],
             ),
+           
           ],
         ),
       ),

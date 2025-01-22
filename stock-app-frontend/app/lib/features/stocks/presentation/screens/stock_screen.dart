@@ -1,14 +1,17 @@
 import 'dart:convert';
 import 'package:app/core/constant/enums/button_type.dart';
 import 'package:app/core/constant/icons/app_icons_path.dart';
+import 'package:app/core/dependency_injection/service_locator.dart';
 import 'package:app/core/utils/themes/colors/colorgraphy.dart';
 import 'package:app/core/utils/themes/fonts/app_typography.dart';
 import 'package:app/core/utils/widgets/Appbar/custom_app_bar.dart';
 import 'package:app/core/utils/widgets/Icons/custom_icon.dart';
 import 'package:app/core/utils/widgets/buttons/custom_floating_button.dart';
 import 'package:app/core/utils/widgets/buttons/custom_icon_button.dart';
+import 'package:app/features/watchlist/domain/usecases/add_stock_data.dart';
 import 'package:app/features/watchlist/presentation/bloc/bloc.dart';
 import 'package:app/features/watchlist/presentation/screens/save_data_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +32,7 @@ class _StockHomePageState extends State<StockHomePage> {
   final String _apiKey = '1dab9e2bfab83037e33555ebab3edd0a';
   final String _baseUrl = 'https://api.marketstack.com/v1'; // Changed to HTTPS
 
+  
   Future<void> _fetchStockData(String symbol) async {
     setState(() {
       _isLoading = true;
@@ -78,143 +82,170 @@ class _StockHomePageState extends State<StockHomePage> {
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors().backgroundColor,
-      floatingActionButton: CustomFloatingButton(
-        icon: CustomIcon(
-          svgPath: AppIcons.dataIcon,
-          size: 34,
-          color: AppColors().backgroundColor,
+    return BlocProvider(
+      create: (context) => sl<StockBloc>()..add(LoadStocksEvent()),
+      child: Scaffold(
+        backgroundColor: AppColors().backgroundColor,
+        floatingActionButton: CustomFloatingButton(
+          icon: CustomIcon(
+            svgPath: AppIcons.dataIcon,
+            size: 34,
+            color: AppColors().backgroundColor,
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SaveDataScreen()),
+            );
+            // context.read<StockBloc>().add(LoadStocksEvent());
+          },
+          backgroundColor: AppColors().primaryColor,
         ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const SaveDataScreen()),
-          );
-          // context.read<StockBloc>().add(LoadStocksEvent());
-        },
-        backgroundColor: AppColors().primaryColor,
-      ),
-      appBar: CustomAppBar(
-        title: 'Stock Market',
-        backgroundColor: AppColors().primaryColor,
-        foregroundColor: AppColors().backgroundColor,
-        automaticallyImplyLeading: false,
-        elevation: 8.0,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8),
-              Text(
-                'Enter a stock symbol to get started',
-                style: AppTypography.subtitle.copyWith(
-                  color: Colors.grey[800],
-                ),
-              ),
-              const SizedBox(height: 20),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+        appBar: CustomAppBar(
+          title: 'Stock Market',
+          backgroundColor: AppColors().primaryColor,
+          foregroundColor: AppColors().backgroundColor,
+          automaticallyImplyLeading: false,
+          elevation: 8.0,
+        ),
+        body: BlocListener<StockBloc, StockState>(
+          listener: (context, state) {
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   SnackBar(
+            //     content: Text('error ${state.toString()}'),
+            //     backgroundColor: Colors.red,
+            //   ),
+            // );
+            if (state is StockLoaded) {
+              final stockOffline = StockOffline(
+                symbol: stock!.symbol,
+                companyName: stock!.companyName,
+                currentPrice: stock!.currentPrice,
+                changeAmount: stock!.changeAmount,
+                changePercentage: stock!.changePercentage,
+              );
+
+              context.read<StockBloc>().add(SaveStockEvent(stockOffline));
+            }
+          },
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Text(
+                    'Enter a stock symbol to get started',
+                    style: AppTypography.subtitle.copyWith(
+                      color: Colors.grey[800],
                     ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    labelText: 'Enter Stock Symbol (e.g., AAPL)',
-                    labelStyle: AppTypography.label,
-                    filled: true,
-                    fillColor: Colors.white,
-                    // prefixIcon: Icon(Icons.search, color: AppColors().primaryColor),
-                    suffixIcon: IconButton(
-                      icon: CustomIcon(
-                        svgPath: AppIcons.searchIcon,
-                        size: 34,
-                        color:
-                            _isLoading ? AppColors().primaryColor : Colors.grey,
-                      ),
-                      onPressed: () {
-                        _stockSymbol = _controller.text;
-                        if (_stockSymbol.isNotEmpty) {
-                          _fetchStockData(_stockSymbol);
-                        }
-                      },
-                    ),
-                    border: OutlineInputBorder(
+                  ),
+                  const SizedBox(height: 20),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12.0),
-                      borderSide: BorderSide(
-                        color: AppColors().primaryColor,
-                        width: 2.0,
-                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                      borderSide: BorderSide(
-                        color: AppColors().primaryColor,
-                        width: 2.0,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (_isLoading)
-                Center(
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors().primaryColor),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Fetching stock data...',
-                        style: AppTypography.subtitle,
-                      ),
-                    ],
-                  ),
-                ),
-              if (_errorMessage.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline,
-                          color: Colors.red[700], size: 24),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage,
-                          style: TextStyle(color: Colors.red[700]),
+                    child: TextField(
+                      controller: _controller,
+                      decoration: InputDecoration(
+                        labelText: 'Enter Stock Symbol (e.g., AAPL)',
+                        labelStyle: AppTypography.label,
+                        filled: true,
+                        fillColor: Colors.white,
+                        // prefixIcon: Icon(Icons.search, color: AppColors().primaryColor),
+                        suffixIcon: IconButton(
+                          icon: CustomIcon(
+                            svgPath: AppIcons.searchIcon,
+                            size: 34,
+                            color: _isLoading
+                                ? AppColors().primaryColor
+                                : Colors.grey,
+                          ),
+                          onPressed: () {
+                            _stockSymbol = _controller.text;
+                            if (_stockSymbol.isNotEmpty) {
+                              _fetchStockData(_stockSymbol);
+                            }
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          borderSide: BorderSide(
+                            color: AppColors().primaryColor,
+                            width: 2.0,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          borderSide: BorderSide(
+                            color: AppColors().primaryColor,
+                            width: 2.0,
+                          ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              if (_stockData != null)
-                AnimatedOpacity(
-                  opacity: _stockData != null ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 500),
-                  child: _buildStockCard(_stockData!),
-                ),
-            ],
+                  const SizedBox(height: 20),
+                  if (_isLoading)
+                    Center(
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors().primaryColor),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Fetching stock data...',
+                            style: AppTypography.subtitle,
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (_errorMessage.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline,
+                              color: Colors.red[700], size: 24),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage,
+                              style: TextStyle(color: Colors.red[700]),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (_stockData != null)
+                    AnimatedOpacity(
+                      opacity: _stockData != null ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 500),
+                      child: _buildStockCard(_stockData!),
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -375,17 +406,31 @@ class _StockHomePageState extends State<StockHomePage> {
           Positioned(
             top: 8,
             right: 8,
-            child: CustomIconButton(
-              icon: AppIcons.saveIcon,
-              type: ButtonType.secondary,
-              onPressed: () {
-                context.read<StockBloc>().add(SaveStockEvent(StockOffline(
+            child: BlocBuilder<StockBloc, StockState>(
+              builder: (context, state) {
+                return CustomIconButton(
+                  icon: AppIcons.saveIcon,
+                  type: ButtonType.secondary,
+                  onPressed: () {
+                    final stockOffline = StockOffline(
                       symbol: stock.symbol,
                       companyName: stock.companyName,
                       currentPrice: stock.currentPrice,
                       changeAmount: stock.changeAmount,
                       changePercentage: stock.changePercentage,
-                    )));
+                    );
+
+                    context.read<StockBloc>().add(SaveStockEvent(stockOffline));
+
+                    // Show saving indication
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Saving stock...'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                );
               },
             ),
           ),
@@ -455,4 +500,8 @@ class StockOffline {
   static double roundToTwoDecimal(double value) {
     return (value * 100).roundToDouble() / 100;
   }
+
+  
 }
+
+

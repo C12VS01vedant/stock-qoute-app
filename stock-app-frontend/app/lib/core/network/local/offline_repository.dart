@@ -5,11 +5,13 @@ import 'package:path_provider/path_provider.dart';
 class HiveDatabaseService<T> {
   late Box<T> _box;
 
+  /// Initializes Hive and sets the application documents directory.
   static Future<void> initializeHive() async {
     final appDocumentDir = await getApplicationDocumentsDirectory();
     Hive.init(appDocumentDir.path);
   }
 
+  /// Opens a Hive box with the given name.
   Future<void> openBox(String boxName) async {
     if (!Hive.isBoxOpen(boxName)) {
       _box = await Hive.openBox<T>(boxName);
@@ -53,9 +55,8 @@ class HiveDatabaseService<T> {
     await _box.close();
   }
 
-
-  // for particular delete stock.
-   Future<void> deleteStock(String symbol) async {
+  /// Deletes a stock by its symbol.
+  Future<void> deleteStock(String symbol) async {
     final box = await Hive.openBox<StockOffline>('stocks');
     await box.delete(symbol);
   }

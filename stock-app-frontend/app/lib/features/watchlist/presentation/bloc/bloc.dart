@@ -10,6 +10,7 @@ class StockBloc extends Bloc<StockEvent, StockState> {
   StockBloc(this._repository) : super(StockInitial()) {
     on<SaveStockEvent>(_onSaveStock);
     on<LoadStocksEvent>(_onLoadStocks);
+    on<DeleteStockEvent>(_onDeleteStock);
   }
 
   Future<void> _onSaveStock(
@@ -18,7 +19,7 @@ class StockBloc extends Bloc<StockEvent, StockState> {
       await _repository.saveStock(event.stock);
       add(LoadStocksEvent());
     } catch (e) {
-      emit(StockError('Failed to save stock data'));
+      emit(StockError('Failed to save stock: ${e.toString()}'));
     }
   }
 
@@ -29,7 +30,7 @@ class StockBloc extends Bloc<StockEvent, StockState> {
       final stocks = await _repository.getAllStocks();
       emit(StockLoaded(stocks));
     } catch (e) {
-      emit(StockError('Failed to load stocks'));
+      emit(StockError('Failed to load stocks: ${e.toString()}'));
     }
   }
 
@@ -39,7 +40,6 @@ class StockBloc extends Bloc<StockEvent, StockState> {
       emit(StockLoading());
       await _repository.deleteStock(event.stock.symbol);
       final stocks = await _repository.getAllStocks();
-      // final stocks = await _repository.getStocks(); // Reload remaining stocks
       emit(StockLoaded(stocks));
     } catch (e) {
       emit(StockError('Failed to delete stock: ${e.toString()}'));
